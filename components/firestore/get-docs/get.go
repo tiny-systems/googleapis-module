@@ -44,6 +44,7 @@ type Request struct {
 type Response struct {
 	Context Context  `json:"context" title:"Context"`
 	Results []Result `json:"results" title:"Document"`
+	Count   int      `json:"count" title:"Count" description:"Number of documents found"`
 }
 
 type Result struct {
@@ -147,6 +148,7 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 	return output(ctx, ResponsePort, Response{
 		Context: req.Context,
 		Results: results,
+		Count:   len(results),
 	})
 }
 

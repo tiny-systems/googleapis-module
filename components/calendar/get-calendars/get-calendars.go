@@ -85,7 +85,7 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 		})
 	}
 
-	return output(ctx, ErrorPort, Response{
+	return output(ctx, ResponsePort, Response{
 		Request:   in,
 		Calendars: calendars,
 	})

@@ -90,7 +90,7 @@ func (h *Component) Handle(ctx context.Context, handler module.Handler, port str
 		return nil
 	}
 
-	if port != ResponsePort {
+	if port != RequestPort {
 		return fmt.Errorf("unknown port %s", port)
 	}
 

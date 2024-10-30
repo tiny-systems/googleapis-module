@@ -119,25 +119,27 @@ func (c *Component) getEvents(ctx context.Context, req Request) (*calendar.Event
 
 	call := srv.Events.List(req.CalendarId).ShowDeleted(req.ShowDeleted).SingleEvents(req.SingleEvents)
 
-	if !req.StartDate.IsZero() {
-		call.TimeMin(req.StartDate.Format(time.RFC3339))
-	}
-	if !req.EndDate.IsZero() {
-		call.TimeMax(req.EndDate.Format(time.RFC3339))
-	}
-
 	if req.PageToken != "" {
 		call.PageToken(req.PageToken)
 	}
+
 	if req.SyncToken != "" {
 		call.SyncToken(req.SyncToken)
+	} else {
+
+		if !req.StartDate.IsZero() {
+			call.TimeMin(req.StartDate.Format(time.RFC3339))
+		}
+		if !req.EndDate.IsZero() {
+			call.TimeMax(req.EndDate.Format(time.RFC3339))
+		}
 	}
 
 	maxResults := req.MaxResults
 	if maxResults == 0 {
 		maxResults = 250
 	}
-	call.MaxResults(maxResults).OrderBy("startTime")
+	call.MaxResults(maxResults)
 
 	events, err := call.Do()
 	if err != nil {

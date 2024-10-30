@@ -23,15 +23,17 @@ const (
 type Context any
 
 type Request struct {
-	Context     Context          `json:"context,omitempty" configurable:"true" title:"Context" description:"Arbitrary message to be send further"`
-	Config      etc.ClientConfig `json:"config" required:"true" title:"Client credentials"`
-	CalendarId  string           `json:"calendarId" required:"true" default:"primary" minLength:"1" title:"Calendar ID"`
-	StartDate   time.Time        `json:"startDate" title:"Start date"`
-	EndDate     time.Time        `json:"endDate" title:"End date"`
-	Token       etc.Token        `json:"token" required:"true" title:"Auth Token"`
-	SyncToken   string           `json:"syncToken,omitempty" title:"Sync Token"`
-	PageToken   string           `json:"pageToken,omitempty" title:"Page Token"`
-	ShowDeleted bool             `json:"showDeleted,omitempty" title:"Show deleted events" default:"true"`
+	Context      Context          `json:"context,omitempty" configurable:"true" title:"Context" description:"Arbitrary message to be send further"`
+	Config       etc.ClientConfig `json:"config" required:"true" title:"Client credentials"`
+	CalendarId   string           `json:"calendarId" required:"true" default:"primary" minLength:"1" title:"Calendar ID"`
+	StartDate    time.Time        `json:"startDate" title:"Start date"`
+	EndDate      time.Time        `json:"endDate" title:"End date"`
+	Token        etc.Token        `json:"token" required:"true" title:"Auth Token"`
+	SyncToken    string           `json:"syncToken,omitempty" title:"Sync Token" description:"To proceed syncing from previous position"`
+	PageToken    string           `json:"pageToken,omitempty" title:"Page Token" description:"Token used to retrieve the page."`
+	ShowDeleted  bool             `json:"showDeleted,omitempty" title:"Show deleted events" default:"true"`
+	SingleEvents bool             `json:"singleEvents" title:"Single events" description:"Whether to expand recurring events into instances and only return single one-off events and instances of recurring events"`
+	MaxResults   int64            `json:"maxResults" title:"Max results" description:"Maximum number of events returned on one result page." max:"2500" default:"250"`
 }
 
 type Error struct {
@@ -115,7 +117,7 @@ func (c *Component) getEvents(ctx context.Context, req Request) (*calendar.Event
 		return nil, fmt.Errorf("unable to retrieve calendar client: %v", err)
 	}
 
-	call := srv.Events.List(req.CalendarId).ShowDeleted(req.ShowDeleted).SingleEvents(true)
+	call := srv.Events.List(req.CalendarId).ShowDeleted(req.ShowDeleted).SingleEvents(req.SingleEvents)
 
 	if !req.StartDate.IsZero() {
 		call.TimeMin(req.StartDate.Format(time.RFC3339))
@@ -131,7 +133,7 @@ func (c *Component) getEvents(ctx context.Context, req Request) (*calendar.Event
 		call.SyncToken(req.SyncToken)
 	}
 
-	call.MaxResults(100).OrderBy("startTime")
+	call.MaxResults(req.MaxResults).OrderBy("startTime")
 
 	events, err := call.Do()
 	if err != nil {

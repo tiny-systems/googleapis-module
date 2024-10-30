@@ -133,7 +133,11 @@ func (c *Component) getEvents(ctx context.Context, req Request) (*calendar.Event
 		call.SyncToken(req.SyncToken)
 	}
 
-	call.MaxResults(req.MaxResults).OrderBy("startTime")
+	maxResults := req.MaxResults
+	if maxResults == 0 {
+		maxResults = 250
+	}
+	call.MaxResults(maxResults).OrderBy("startTime")
 
 	events, err := call.Do()
 	if err != nil {

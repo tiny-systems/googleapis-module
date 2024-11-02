@@ -52,7 +52,7 @@ func (g *Component) GetInfo() module.ComponentInfo {
 	return module.ComponentInfo{
 		Name:        ComponentName,
 		Description: "Firestore Create Record",
-		Info:        "Creates a new record in a collection",
+		Info:        "Adds if refID is empty, Sets if it is not",
 		Tags:        []string{"google", "firestore", "db"},
 	}
 }

@@ -11,6 +11,7 @@ import (
 	_ "github.com/tiny-systems/googleapis-module/components/calendar/channel-watch"
 	_ "github.com/tiny-systems/googleapis-module/components/calendar/get-calendars"
 	_ "github.com/tiny-systems/googleapis-module/components/calendar/get-events"
+	_ "github.com/tiny-systems/googleapis-module/components/calendar/response-event"
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/create-doc"
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/delete-doc"
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/get-docs"

@@ -1,4 +1,4 @@
-package get_calendars
+package response_event
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ComponentName = "get_calendars"
+	ComponentName = "response_event"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"
@@ -30,14 +30,17 @@ type Component struct {
 }
 
 type Request struct {
-	Context Context          `json:"context" title:"Context" configurable:"true"`
-	Config  etc.ClientConfig `json:"config" title:"Config"  required:"true" description:"Client Config"`
-	Token   etc.Token        `json:"token" required:"true" title:"Auth Token"`
+	Context            Context          `json:"context" title:"Context" configurable:"true"`
+	Config             etc.ClientConfig `json:"config" title:"Config"  required:"true" description:"Client Config"`
+	Token              etc.Token        `json:"token" required:"true" title:"Auth Token"`
+	CalendarID         string           `json:"calendarID" title:"Calendar ID" required:"true"`
+	EventID            string           `json:"eventID" title:"Event ID" required:"true"`
+	EventAttendeeEmail string           `json:"eventAttendeeEmail" title:"Event Attendee Email" required:"true"`
+	ResponseStatus     string           `json:"responseStatus" title:"Response Status" required:"true" enum:"accepted,declined,tentative"`
 }
 
 type Response struct {
-	Context   Context                       `json:"context" title:"Context" configurable:"true"`
-	Calendars []*calendar.CalendarListEntry `json:"calendars"`
+	Context Context `json:"context"`
 }
 
 type Error struct {
@@ -48,8 +51,8 @@ type Error struct {
 func (g *Component) GetInfo() module.ComponentInfo {
 	return module.ComponentInfo{
 		Name:        ComponentName,
-		Description: "Get Calendar list",
-		Info:        "Gets list of calendars",
+		Description: "Response event",
+		Info:        "Response to calendar event",
 		Tags:        []string{"google", "calendar", "auth"},
 	}
 }
@@ -73,7 +76,7 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 		return fmt.Errorf("invalid input message")
 	}
 
-	calendars, err := g.getCalendars(ctx, in)
+	err := g.responseEvent(ctx, in)
 	if err != nil {
 		// check err port
 		if !g.settings.EnableErrorPort {
@@ -86,16 +89,15 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 	}
 
 	return output(ctx, ResponsePort, Response{
-		Context:   in.Context,
-		Calendars: calendars,
+		Context: in.Context,
 	})
 }
 
-func (c *Component) getCalendars(ctx context.Context, req Request) ([]*calendar.CalendarListEntry, error) {
+func (c *Component) responseEvent(ctx context.Context, req Request) error {
 
 	config, err := google.ConfigFromJSON([]byte(req.Config.Credentials), req.Config.Scopes...)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse client secret file to config: %v", err)
+		return fmt.Errorf("unable to parse client secret file to config: %v", err)
 	}
 
 	client := config.Client(ctx, &oauth2.Token{
@@ -107,14 +109,19 @@ func (c *Component) getCalendars(ctx context.Context, req Request) ([]*calendar.
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve calendar client: %v", err)
+		return fmt.Errorf("unable to retrieve calendar client: %v", err)
 	}
 
-	list, err := srv.CalendarList.List().Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-	return list.Items, nil
+	_, err = srv.Events.Update(req.CalendarID, req.EventID, &calendar.Event{
+		Attendees: []*calendar.EventAttendee{
+			{
+				Email:          req.EventAttendeeEmail,
+				ResponseStatus: req.ResponseStatus,
+			},
+		},
+	}).Context(ctx).Do()
+
+	return err
 }
 
 func (g *Component) Ports() []module.Port {

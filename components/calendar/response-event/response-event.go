@@ -112,14 +112,20 @@ func (c *Component) responseEvent(ctx context.Context, req Request) error {
 		return fmt.Errorf("unable to retrieve calendar client: %v", err)
 	}
 
-	_, err = srv.Events.Update(req.CalendarID, req.EventID, &calendar.Event{
-		Attendees: []*calendar.EventAttendee{
-			{
-				Email:          req.EventAttendeeEmail,
-				ResponseStatus: req.ResponseStatus,
-			},
-		},
-	}).Context(ctx).Do()
+	event, err := srv.Events.Get(req.CalendarID, req.EventID).Context(ctx).Do()
+	if err != nil {
+		return fmt.Errorf("unable to retrieve event: %v", err)
+	}
+	//
+
+	for _, a := range event.Attendees {
+		if a.Email != req.EventAttendeeEmail {
+			continue
+		}
+		a.ResponseStatus = req.ResponseStatus
+	}
+
+	_, err = srv.Events.Update(req.CalendarID, req.EventID, event).Context(ctx).Do()
 
 	return err
 }

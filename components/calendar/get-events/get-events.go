@@ -26,8 +26,8 @@ type Request struct {
 	Context      Context          `json:"context,omitempty" configurable:"true" title:"Context" description:"Arbitrary message to be send further"`
 	Config       etc.ClientConfig `json:"config" required:"true" title:"Client credentials"`
 	CalendarId   string           `json:"calendarId" required:"true" default:"primary" minLength:"1" title:"Calendar ID"`
-	StartDate    time.Time        `json:"startDate" title:"Start date"`
-	EndDate      time.Time        `json:"endDate" title:"End date"`
+	StartDate    time.Time        `json:"startDate" title:"Start date" description:"2012-10-01T09:45:00.000+02:00"`
+	EndDate      time.Time        `json:"endDate" title:"End date" description:"2012-10-01T09:45:00.000+02:00"`
 	Token        etc.Token        `json:"token" required:"true" title:"Auth Token"`
 	SyncToken    string           `json:"syncToken,omitempty" title:"Sync Token" description:"To proceed syncing from previous position"`
 	PageToken    string           `json:"pageToken,omitempty" title:"Page Token" description:"Token used to retrieve the page."`

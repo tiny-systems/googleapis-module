@@ -1,18 +1,22 @@
-package create_doc
+package listen_collection
 
 import (
-	"cloud.google.com/go/firestore"
 	"context"
+	"errors"
 	firebase "firebase.google.com/go"
 	"fmt"
 	"github.com/tiny-systems/googleapis-module/components/etc"
+	"github.com/tiny-systems/googleapis-module/components/firestore/utils"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
-	ComponentName = "firestore_create_doc"
+	ComponentName = "listen_collection"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"
@@ -21,8 +25,7 @@ const (
 type Context any
 
 type Settings struct {
-	EnableErrorPort    bool `json:"enableErrorPort" required:"true" title:"Enable Error Port" description:"If request may fail, error port will emit an error message"`
-	EnableResponsePort bool `json:"enableResponsePort" required:"true" title:"Enable Response Port" description:""`
+	EnableErrorPort bool `json:"enableErrorPort" required:"true" title:"Enable Error Port" description:"If request may fail, error port will emit an error message"`
 }
 
 type Component struct {
@@ -30,17 +33,17 @@ type Component struct {
 }
 
 type Request struct {
-	Context    Context                `json:"context,omitempty" title:"Context" configurable:"true"`
-	Config     etc.ClientConfig       `json:"config" title:"Config" required:"true" description:"Client Config"`
-	Collection string                 `json:"collection" title:"Collection" required:"true"`
-	RefID      string                 `json:"refID,omitempty" title:"RefID" description:"Optional"`
-	Document   map[string]interface{} `json:"document" configurable:"true" title:"Document" required:"true"`
+	Context    Context          `json:"context,omitempty" title:"Context" configurable:"true"`
+	Config     etc.ClientConfig `json:"config" title:"Config"  required:"true" description:"Client Config"`
+	Collection string           `json:"collection" title:"Collection" required:"true"`
+	Wheres     []utils.Where    `json:"wheres,omitempty" title:"Where" description:"Where to filter. Leave empty if you want to listen the entire collection."`
 }
 
 type Response struct {
-	Context Context `json:"context" title:"Context"`
-	RefID   string  `json:"refID"`
-	RefPath string  `json:"refPath"`
+	Context  Context                `json:"context" title:"Context"`
+	RefID    string                 `json:"refID"`
+	Document map[string]interface{} `json:"document" title:"Document"`
+	Exists   bool                   `json:"exists" title:"Exists"`
 }
 
 type Error struct {
@@ -51,8 +54,8 @@ type Error struct {
 func (g *Component) GetInfo() module.ComponentInfo {
 	return module.ComponentInfo{
 		Name:        ComponentName,
-		Description: "Firestore Create Record",
-		Info:        "Adds document if refID is empty, updates if it's not",
+		Description: "Firestore Listen Collection",
+		Info:        "Listens to changes of the collection",
 		Tags:        []string{"google", "firestore", "db"},
 	}
 }
@@ -67,6 +70,8 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 		g.settings = in
 		return nil
 	}
+
+	var err error
 
 	req, ok := msg.(Request)
 	if !ok {
@@ -98,42 +103,43 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 		})
 	}
 
-	col := db.Collection(req.Collection)
+	ref := db.Collection(req.Collection)
+	q := ref.Query
 
-	var ref *firestore.DocumentRef
-
-	if req.RefID != "" {
-		ref = col.Doc(req.RefID)
-		_, err = ref.Set(ctx, req.Document)
-	} else {
-		ref, _, err = col.Add(ctx, req.Document)
-	}
-
-	if err != nil {
-		// check err port
-		if !g.settings.EnableErrorPort {
-			return err
+	if len(req.Wheres) > 0 {
+		for _, w := range req.Wheres {
+			q = q.Where(w.Path, w.Operation, w.Value)
 		}
-		return output(ctx, ErrorPort, Error{
-			Context: req.Context,
-			Error:   err.Error(),
-		})
 	}
 
-	if !g.settings.EnableResponsePort {
-		return nil
-	}
+	iter := q.Snapshots(ctx)
+	for {
+		snap, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if status.Code(err) == codes.DeadlineExceeded {
+			break
+		}
 
-	resp := Response{
-		Context: req.Context,
-	}
+		docs, err := snap.Documents.GetAll()
+		if err != nil {
+			continue
+		}
 
-	if ref != nil {
-		resp.RefID = ref.ID
-		resp.RefPath = ref.Path
+		for _, doc := range docs {
+			resp := Response{
+				Context:  req.Context,
+				Document: doc.Data(),
+				Exists:   doc.Exists(),
+			}
+			if doc.Ref != nil {
+				resp.RefID = doc.Ref.ID
+			}
+			_ = output(ctx, ResponsePort, resp)
+		}
 	}
-
-	return output(ctx, ResponsePort, resp)
+	return nil
 }
 
 func (g *Component) Ports() []module.Port {
@@ -151,18 +157,15 @@ func (g *Component) Ports() []module.Port {
 			Position:      module.Left,
 			Configuration: Request{},
 		},
-	}
-
-	//
-	if g.settings.EnableResponsePort {
-		ports = append(ports, module.Port{
+		{
 			Source:        false,
 			Name:          ResponsePort,
 			Label:         "Response",
 			Position:      module.Right,
 			Configuration: Response{},
-		})
+		},
 	}
+	//
 
 	if !g.settings.EnableErrorPort {
 		return ports

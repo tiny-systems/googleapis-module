@@ -15,6 +15,7 @@ import (
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/create-doc"
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/delete-doc"
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/get-docs"
+	_ "github.com/tiny-systems/googleapis-module/components/firestore/listen-collection"
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/update-doc"
 	_ "github.com/tiny-systems/googleapis-module/components/firestore/update-doc-field"
 	"github.com/tiny-systems/module/cli"

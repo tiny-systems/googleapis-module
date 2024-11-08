@@ -1,15 +1,14 @@
 package listen_collection
 
 import (
+	"cloud.google.com/go/firestore"
 	"context"
-	"errors"
 	firebase "firebase.google.com/go"
 	"fmt"
 	"github.com/tiny-systems/googleapis-module/components/etc"
 	"github.com/tiny-systems/googleapis-module/components/firestore/utils"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
-	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,8 +41,8 @@ type Request struct {
 type Response struct {
 	Context  Context                `json:"context" title:"Context"`
 	RefID    string                 `json:"refID"`
-	Document map[string]interface{} `json:"document" title:"Document"`
-	Exists   bool                   `json:"exists" title:"Exists"`
+	Document map[string]interface{} `json:"document" title:"Document" description:"Document that changed"`
+	Action   string                 `json:"action" title:"Action" enum:"added,modified,removed"`
 }
 
 type Error struct {
@@ -115,31 +114,42 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 	iter := q.Snapshots(ctx)
 	for {
 		snap, err := iter.Next()
-		if errors.Is(err, iterator.Done) {
-			break
-		}
+		// DeadlineExceeded will be returned when ctx is cancelled.
 		if status.Code(err) == codes.DeadlineExceeded {
-			break
+			return nil
 		}
-
-		docs, err := snap.Documents.GetAll()
 		if err != nil {
+			return fmt.Errorf("Snapshots.Next: %w", err)
+		}
+		if snap == nil {
 			continue
 		}
 
-		for _, doc := range docs {
-			resp := Response{
-				Context:  req.Context,
-				Document: doc.Data(),
-				Exists:   doc.Exists(),
+		for _, change := range snap.Changes {
+
+			var action string
+			switch change.Kind {
+			case firestore.DocumentAdded:
+				action = "added"
+			case firestore.DocumentModified:
+				action = "modified"
+			case firestore.DocumentRemoved:
+				action = "removed"
 			}
-			if doc.Ref != nil {
-				resp.RefID = doc.Ref.ID
+
+			resp := Response{
+				Context: req.Context,
+				Action:  action,
+			}
+			if change.Doc != nil {
+				resp.Document = change.Doc.Data()
+				if change.Doc.Ref != nil {
+					resp.RefID = change.Doc.Ref.ID
+				}
 			}
 			_ = output(ctx, ResponsePort, resp)
 		}
 	}
-	return nil
 }
 
 func (g *Component) Ports() []module.Port {

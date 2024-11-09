@@ -3,6 +3,7 @@ package listen_collection
 import (
 	"cloud.google.com/go/firestore"
 	"context"
+	"errors"
 	firebase "firebase.google.com/go"
 	"fmt"
 	"github.com/tiny-systems/googleapis-module/components/etc"
@@ -16,7 +17,7 @@ import (
 )
 
 const (
-	ComponentName = "listen_collection"
+	ComponentName = "firestore_listen_collection"
 	ResponsePort  = "response"
 	StartPort     = "start"
 	StopPort      = "stop"
@@ -27,11 +28,10 @@ type Context any
 
 type StartControl struct {
 	Status string `json:"status" title:"Status" readonly:"true"`
-	Start  bool   `json:"start" format:"button" title:"Start" required:"true" description:"Start HTTP server"`
 }
 
 type StopControl struct {
-	Stop   bool   `json:"stop" format:"button" title:"Stop" required:"true" description:"Stop HTTP server"`
+	Stop   bool   `json:"stop" format:"button" title:"Stop" required:"true" description:"Stop listening"`
 	Status string `json:"status" title:"Status" readonly:"true"`
 }
 
@@ -126,8 +126,14 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 	defer listenCancel()
 
 	g.setCancelFunc(listenCancel)
+	_ = handler(listenCtx, module.ReconcilePort, nil)
 
-	app, err := firebase.NewApp(ctx, nil, option.WithCredentialsJSON([]byte(g.startSettings.Config.Credentials)), option.WithScopes(g.startSettings.Config.Scopes...))
+	defer func() {
+		g.setCancelFunc(nil)
+		_ = handler(context.Background(), module.ReconcilePort, nil)
+	}()
+
+	app, err := firebase.NewApp(listenCtx, nil, option.WithCredentialsJSON([]byte(g.startSettings.Config.Credentials)), option.WithScopes(g.startSettings.Config.Scopes...))
 	if err != nil {
 		// check err port
 		if !g.settings.EnableErrorPort {
@@ -163,14 +169,20 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 
 	iter := q.Snapshots(listenCtx)
 	for {
+
 		snap, err := iter.Next()
 		// DeadlineExceeded will be returned when ctx is cancelled.
 		if status.Code(err) == codes.DeadlineExceeded {
 			return nil
 		}
-		if err != nil {
-			return fmt.Errorf("Snapshots.Next: %w", err)
+		if errors.Is(listenCtx.Err(), context.Canceled) {
+			return nil
 		}
+
+		if err != nil {
+			return fmt.Errorf("snapshots next: %w", err)
+		}
+
 		if snap == nil {
 			continue
 		}
@@ -293,7 +305,9 @@ func (g *Component) Ports() []module.Port {
 
 func (g *Component) Instance() module.Component {
 	return &Component{
-		startSettings: Start{},
+		cancelFuncLock: &sync.Mutex{},
+		runLock:        &sync.Mutex{},
+		startSettings:  Start{},
 	}
 }
 

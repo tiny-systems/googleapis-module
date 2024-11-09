@@ -8,7 +8,7 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
-	github.com/tiny-systems/module v0.1.96
+	github.com/tiny-systems/module v0.1.97
 	golang.org/x/oauth2 v0.21.0
 	google.golang.org/api v0.171.0
 )
@@ -145,6 +145,6 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-//replace github.com/tiny-systems/module => ../../module
+replace github.com/tiny-systems/module => ../../module
 
 replace github.com/spyzhov/ajson v0.9.4 => github.com/tiny-systems/ajson v0.1.3

@@ -10,6 +10,7 @@ import (
 	"github.com/tiny-systems/googleapis-module/components/firestore/utils"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -39,7 +40,7 @@ type Stop struct {
 }
 
 type Settings struct {
-	EnableErrorPort bool `json:"enableErrorPort" required:"true" title:"Enable Error Port" description:"If request may fail, error port will emit an error message"`
+	EnableErrorPort bool `json:"enableErrorPort" required:"true" title:"Enable error port" description:"If request may fail, error port will emit an error message"`
 	EnableStopPort  bool `json:"enableStopPort" required:"true" title:"Enable stop port" description:"Stop port allows you to stop listener"`
 }
 
@@ -139,7 +140,8 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 		if !g.settings.EnableErrorPort {
 			return err
 		}
-		return handler(listenCtx, ErrorPort, Error{
+
+		return handler(trace.ContextWithSpanContext(listenCtx, trace.NewSpanContext(trace.SpanContextConfig{})), ErrorPort, Error{
 			Context: g.startSettings.Context,
 			Error:   err.Error(),
 		})

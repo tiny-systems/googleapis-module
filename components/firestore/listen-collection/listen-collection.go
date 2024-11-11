@@ -10,7 +10,6 @@ import (
 	"github.com/tiny-systems/googleapis-module/components/firestore/utils"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -137,27 +136,14 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 	app, err := firebase.NewApp(listenCtx, nil, option.WithCredentialsJSON([]byte(g.startSettings.Config.Credentials)), option.WithScopes(g.startSettings.Config.Scopes...))
 	if err != nil {
 		// check err port
-		if !g.settings.EnableErrorPort {
-			return err
-		}
-
-		return handler(trace.ContextWithSpanContext(listenCtx, trace.NewSpanContext(trace.SpanContextConfig{})), ErrorPort, Error{
-			Context: g.startSettings.Context,
-			Error:   err.Error(),
-		})
+		return err
 	}
 
 	db, err := app.Firestore(listenCtx)
 
 	if err != nil {
 		// check err port
-		if !g.settings.EnableErrorPort {
-			return err
-		}
-		return handler(listenCtx, ErrorPort, Error{
-			Context: g.startSettings.Context,
-			Error:   err.Error(),
-		})
+		return err
 	}
 
 	ref := db.Collection(g.startSettings.Collection)
@@ -175,9 +161,11 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 		snap, err := iter.Next()
 		// DeadlineExceeded will be returned when ctx is cancelled.
 		if status.Code(err) == codes.DeadlineExceeded {
+			fmt.Println("FS LISTENER DEADLINE EXCEEDED")
 			return nil
 		}
 		if errors.Is(listenCtx.Err(), context.Canceled) {
+			fmt.Println("FS LISTENER CANCELLED")
 			return nil
 		}
 

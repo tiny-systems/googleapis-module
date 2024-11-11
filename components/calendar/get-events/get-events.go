@@ -29,8 +29,8 @@ type Request struct {
 	StartDate    time.Time        `json:"startDate" title:"Start date" description:"2012-10-01T09:45:00.000+02:00"`
 	EndDate      time.Time        `json:"endDate" title:"End date" description:"2012-10-01T09:45:00.000+02:00"`
 	Token        etc.Token        `json:"token" required:"true" title:"Auth Token"`
-	SyncToken    string           `json:"syncToken,omitempty" title:"Sync Token" description:"To proceed syncing from previous position"`
-	PageToken    string           `json:"pageToken,omitempty" title:"Page Token" description:"Token used to retrieve the page."`
+	SyncToken    *string          `json:"syncToken,omitempty" title:"Sync Token" description:"To proceed syncing from previous position"`
+	PageToken    *string          `json:"pageToken,omitempty" title:"Page Token" description:"Token used to retrieve the page."`
 	ShowDeleted  bool             `json:"showDeleted,omitempty" title:"Show deleted events" default:"true"`
 	SingleEvents bool             `json:"singleEvents" title:"Single events" description:"Whether to expand recurring events into instances and only return single one-off events and instances of recurring events"`
 	MaxResults   int64            `json:"maxResults" title:"Max results" description:"Maximum number of events returned on one result page." max:"2500" default:"250"`
@@ -119,12 +119,12 @@ func (c *Component) getEvents(ctx context.Context, req Request) (*calendar.Event
 
 	call := srv.Events.List(req.CalendarId).ShowDeleted(req.ShowDeleted).SingleEvents(req.SingleEvents)
 
-	if req.PageToken != "" {
-		call.PageToken(req.PageToken)
+	if req.PageToken != nil {
+		call.PageToken(*req.PageToken)
 	}
 
-	if req.SyncToken != "" {
-		call.SyncToken(req.SyncToken)
+	if req.SyncToken != nil {
+		call.SyncToken(*req.SyncToken)
 	} else {
 
 		if !req.StartDate.IsZero() {

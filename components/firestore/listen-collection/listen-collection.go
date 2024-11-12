@@ -10,6 +10,7 @@ import (
 	"github.com/tiny-systems/googleapis-module/components/firestore/utils"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -126,6 +127,7 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 	defer listenCancel()
 
 	g.setCancelFunc(listenCancel)
+	// reconcile so show we are listening
 	_ = handler(listenCtx, module.ReconcilePort, nil)
 
 	defer func() {
@@ -133,22 +135,24 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 		_ = handler(context.Background(), module.ReconcilePort, nil)
 	}()
 
-	app, err := firebase.NewApp(listenCtx, nil, option.WithCredentialsJSON([]byte(g.startSettings.Config.Credentials)), option.WithScopes(g.startSettings.Config.Scopes...))
+	app, err := firebase.NewApp(listenCtx, nil,
+		option.WithCredentialsJSON([]byte(g.startSettings.Config.Credentials)),
+		option.WithScopes(g.startSettings.Config.Scopes...),
+	)
 	if err != nil {
 		// check err port
 		return err
 	}
 
 	db, err := app.Firestore(listenCtx)
-
 	if err != nil {
 		// check err port
 		return err
 	}
 
-	ref := db.Collection(g.startSettings.Collection)
-	q := ref.Query
+	defer db.Close()
 
+	q := db.Collection(g.startSettings.Collection).Query
 	if len(g.startSettings.Wheres) > 0 {
 		for _, w := range g.startSettings.Wheres {
 			q = q.Where(w.Path, w.Operation, w.Value)
@@ -157,22 +161,17 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 
 	iter := q.Snapshots(listenCtx)
 	for {
-
 		snap, err := iter.Next()
 		// DeadlineExceeded will be returned when ctx is cancelled.
 		if status.Code(err) == codes.DeadlineExceeded {
-			fmt.Println("FS LISTENER DEADLINE EXCEEDED")
 			return nil
 		}
 		if errors.Is(listenCtx.Err(), context.Canceled) {
-			fmt.Println("FS LISTENER CANCELLED")
 			return nil
 		}
-
 		if err != nil {
 			return fmt.Errorf("snapshots next: %w", err)
 		}
-
 		if snap == nil {
 			continue
 		}
@@ -199,10 +198,9 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 					resp.RefID = change.Doc.Ref.ID
 				}
 			}
-			_ = handler(listenCtx, ResponsePort, resp)
+			_ = handler(trace.ContextWithSpanContext(listenCtx, trace.NewSpanContext(trace.SpanContextConfig{})), ResponsePort, resp)
 		}
 	}
-
 }
 
 func (g *Component) stop() error {

@@ -47,8 +47,7 @@ type Settings struct {
 type Component struct {
 	settings Settings
 
-	startSettings Start
-
+	startSettings  Start
 	cancelFunc     context.CancelFunc
 	cancelFuncLock *sync.Mutex
 
@@ -100,9 +99,6 @@ func (g *Component) Handle(ctx context.Context, handler module.Handler, port str
 			break
 		}
 		switch msg.(type) {
-		case StartControl:
-			return g.start(ctx, handler)
-
 		case StopControl:
 			return g.stop()
 		}
@@ -128,7 +124,7 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 
 	g.setCancelFunc(listenCancel)
 	// reconcile so show we are listening
-	_ = handler(listenCtx, module.ReconcilePort, nil)
+	_ = handler(context.Background(), module.ReconcilePort, nil)
 
 	defer func() {
 		g.setCancelFunc(nil)

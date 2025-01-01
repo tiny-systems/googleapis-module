@@ -8,7 +8,7 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
-	github.com/tiny-systems/module v0.1.113
+	github.com/tiny-systems/module v0.1.116
 	golang.org/x/oauth2 v0.21.0
 	google.golang.org/api v0.171.0
 	google.golang.org/grpc v1.66.1

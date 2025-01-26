@@ -51,7 +51,7 @@ type Error struct {
 func (g *Component) GetInfo() module.ComponentInfo {
 	return module.ComponentInfo{
 		Name:        ComponentName,
-		Description: "Response event",
+		Description: "Response to event",
 		Info:        "Response to calendar event",
 		Tags:        []string{"google", "calendar", "auth"},
 	}

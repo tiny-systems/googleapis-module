@@ -22,15 +22,16 @@ const (
 
 type Context any
 
+type Document map[string]interface{}
+
 type Settings struct {
-	EnableErrorPort bool `json:"enableErrorPort" required:"true" title:"Enable Error Port" description:"If request may fail, error port will emit an error message"`
+	EnableErrorPort bool     `json:"enableErrorPort" required:"true" title:"Enable Error Port" description:"If request may fail, error port will emit an error message"`
+	Document        Document `json:"document" configurable:"true" title:"Document Example" description:"Define document schema. Optional."`
 }
 
 type Component struct {
 	settings Settings
 }
-
-type Document map[string]interface{}
 
 type Request struct {
 	Context    Context          `json:"context,omitempty" title:"Context" configurable:"true"`
@@ -38,7 +39,6 @@ type Request struct {
 	Collection string           `json:"collection" title:"Collection" required:"true"`
 	Wheres     []utils.Where    `json:"wheres,omitempty" title:"Where"`
 	Limit      int              `json:"limit,omitempty" title:"Limit"`
-	Document   Document         `json:"document,omitempty" configurable:"true" title:"Document example"`
 }
 
 type Response struct {
@@ -176,11 +176,9 @@ func (g *Component) Ports() []module.Port {
 		},
 	}
 	//
-
 	if !g.settings.EnableErrorPort {
 		return ports
 	}
-
 	return append(ports, module.Port{
 		Position:      module.Bottom,
 		Name:          ErrorPort,

@@ -1,4 +1,4 @@
-package channel_watch
+package channel_stop
 
 import (
 	"context"
@@ -13,20 +13,16 @@ import (
 )
 
 const (
-	ComponentName = "calendar_channel_watch"
+	ComponentName = "calendar_channel_stop"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"
 )
 
 type Channel struct {
-	ID          string `json:"id" required:"true" title:"ID" description:"A UUID or similar unique string that identifies this channel."`
-	Type        string `json:"type" required:"true" title:"Type" enum:"web_hook" enumTitles:"Webhook" description:"The type of delivery mechanism used for this channel. Valid values are \"web_hook\" (or \"webhook\"). Both values refer to a channel where Http requests are used to deliver messages."`
-	Address     string `json:"address" required:"true" title:"Address" description:"The address where notifications are delivered for this channel."`
-	Expiration  int64  `json:"expiration" title:"Expiration" description:"Date and time of notification channel expiration, expressed as a Unix timestamp, in milliseconds."`
-	ResourceId  string `json:"resourceId" title:"ResourceID" description:"An opaque ID that identifies the resource being watched on this channel. Stable across different API versions."`
-	ResourceUri string `json:"resourceUri" title:"ResourceURI" description:"A version-specific identifier for the watched resource."`
-	Token       string `json:"token" title:"Auth Token" description:"An arbitrary string delivered to the target address with each notification delivered over this channel."`
+	ID         string `json:"id" required:"true" title:"ID" description:"A UUID or similar unique string that identifies this channel."`
+	ResourceId string `json:"resourceId" title:"ResourceID" description:"An opaque ID that identifies the resource being stop on this channel. Stable across different API versions."`
+	Token      string `json:"token" title:"Auth Token" description:"An arbitrary string delivered to the target address with each notification delivered over this channel."`
 }
 
 type Settings struct {
@@ -36,24 +32,14 @@ type Settings struct {
 type Context any
 
 type Request struct {
-	Context  Context          `json:"context,omitempty" configurable:"true" title:"Context" description:"Arbitrary message to be send further"`
-	Calendar Calendar         `json:"calendar" required:"true" title:"Calendar"`
-	Channel  Channel          `json:"channel" required:"true" title:"Channel"`
-	Token    etc.Token        `json:"token" required:"true" title:"Access token"`
-	Config   etc.ClientConfig `json:"config" required:"true" title:"Client credentials"`
-}
-
-type Calendar struct {
-	ID string `json:"id" required:"true" title:"Calendar ID" description:"Google Calendar ID to be watched"`
-}
-
-type WatchChannel struct {
-	ID string `json:"id"`
+	Context Context          `json:"context,omitempty" configurable:"true" title:"Context" description:"Arbitrary message to be send further"`
+	Token   etc.Token        `json:"token" required:"true" title:"Access token"`
+	Channel Channel          `json:"channel" required:"true" title:"Channel to stop"`
+	Config  etc.ClientConfig `json:"config" required:"true" title:"Client credentials"`
 }
 
 type Response struct {
-	Context Context      `json:"context"`
-	Channel WatchChannel `json:"channel"`
+	Context Context `json:"context"`
 }
 
 type Error struct {
@@ -74,9 +60,9 @@ func (h *Component) Instance() module.Component {
 func (h *Component) GetInfo() module.ComponentInfo {
 	return module.ComponentInfo{
 		Name:        ComponentName,
-		Description: "Watch Calendar Channel",
-		Info:        "Register calendar watcher",
-		Tags:        []string{"Google", "Calendar", "Watch"},
+		Description: "Stop Calendar Channel",
+		Info:        "Stop calendar watcher",
+		Tags:        []string{"Google", "Calendar", "Watch", "Stop"},
 	}
 }
 
@@ -99,7 +85,7 @@ func (h *Component) Handle(ctx context.Context, handler module.Handler, port str
 		return fmt.Errorf("invalid message")
 	}
 
-	ch, err := h.watch(ctx, req)
+	err := h.stop(ctx, req)
 	if err != nil {
 		if !h.settings.EnableErrorPort {
 			return err
@@ -109,19 +95,15 @@ func (h *Component) Handle(ctx context.Context, handler module.Handler, port str
 			Error:   err.Error(),
 		})
 	}
-
 	return handler(ctx, ResponsePort, Response{
 		Context: req.Context,
-		Channel: WatchChannel{
-			ID: ch.Id,
-		},
 	})
 }
 
-func (h *Component) watch(ctx context.Context, req Request) (*calendar.Channel, error) {
+func (h *Component) stop(ctx context.Context, req Request) error {
 	config, err := google.ConfigFromJSON([]byte(req.Config.Credentials), req.Config.Scopes...)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse client secret file to config: %v", err)
+		return fmt.Errorf("unable to parse client secret file to config: %v", err)
 	}
 
 	client := config.Client(ctx, &oauth2.Token{
@@ -133,15 +115,12 @@ func (h *Component) watch(ctx context.Context, req Request) (*calendar.Channel, 
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve calendar client: %v", err)
+		return fmt.Errorf("unable to retrieve calendar client: %v", err)
 	}
-
-	return srv.Events.Watch(req.Calendar.ID, &calendar.Channel{
-		Type:       req.Channel.Type,
-		Address:    req.Channel.Address,
+	return srv.Channels.Stop(&calendar.Channel{
 		Token:      req.Channel.Token,
 		Id:         req.Channel.ID,
-		Expiration: req.Channel.Expiration,
+		ResourceId: req.Channel.ResourceId,
 	}).Do()
 }
 
@@ -157,9 +136,7 @@ func (h *Component) Ports() []module.Port {
 			Name:  RequestPort,
 			Label: "Request",
 			Configuration: Request{
-				Channel: Channel{
-					Type: "web_hook",
-				},
+				Channel: Channel{},
 				Token: etc.Token{
 					TokenType: "Bearer",
 				},

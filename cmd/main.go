@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 	_ "github.com/tiny-systems/googleapis-module/components/auth/exchange-code"
 	_ "github.com/tiny-systems/googleapis-module/components/auth/get-url"
+	_ "github.com/tiny-systems/googleapis-module/components/calendar/channel-stop"
 	_ "github.com/tiny-systems/googleapis-module/components/calendar/channel-watch"
 	_ "github.com/tiny-systems/googleapis-module/components/calendar/get-calendars"
 	_ "github.com/tiny-systems/googleapis-module/components/calendar/get-events"

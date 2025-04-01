@@ -48,7 +48,12 @@ type Calendar struct {
 }
 
 type WatchChannel struct {
-	ID string `json:"id"`
+	ID          string `json:"id"`
+	Kind        string `json:"kind"`
+	ResourceID  string `json:"resourceId"`
+	ResourceUri string `json:"resourceUri"`
+	Token       string `json:"token"`
+	Expiration  int64  `json:"expiration"`
 }
 
 type Response struct {
@@ -113,7 +118,12 @@ func (h *Component) Handle(ctx context.Context, handler module.Handler, port str
 	return handler(ctx, ResponsePort, Response{
 		Context: req.Context,
 		Channel: WatchChannel{
-			ID: ch.Id,
+			ID:          ch.Id,
+			Kind:        ch.Kind,
+			ResourceID:  ch.ResourceId,
+			ResourceUri: ch.ResourceUri,
+			Token:       ch.Token,
+			Expiration:  ch.Expiration,
 		},
 	})
 }

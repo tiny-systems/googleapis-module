@@ -112,7 +112,6 @@ func getAuthUrl(_ context.Context, in Request) (string, error) {
 func (a *Component) Ports() []module.Port {
 	ports := []module.Port{
 		{
-			Source:   true,
 			Name:     RequestPort,
 			Label:    "Request",
 			Position: module.Left,
@@ -125,10 +124,9 @@ func (a *Component) Ports() []module.Port {
 			Name:          module.SettingsPort,
 			Label:         "Settings",
 			Configuration: Settings{},
-			Source:        true,
 		},
 		{
-			Source:        false,
+			Source:        true,
 			Name:          ResponsePort,
 			Label:         "Response",
 			Position:      module.Right,
@@ -144,7 +142,7 @@ func (a *Component) Ports() []module.Port {
 		Position:      module.Bottom,
 		Name:          ErrorPort,
 		Label:         "Error",
-		Source:        false,
+		Source:        true,
 		Configuration: Error{},
 	})
 }

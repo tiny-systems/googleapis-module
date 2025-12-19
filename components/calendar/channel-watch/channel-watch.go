@@ -161,7 +161,6 @@ func (h *Component) Ports() []module.Port {
 			Name:          module.SettingsPort,
 			Label:         "Settings",
 			Configuration: Settings{},
-			Source:        true,
 		},
 		{
 			Name:  RequestPort,
@@ -174,13 +173,12 @@ func (h *Component) Ports() []module.Port {
 					TokenType: "Bearer",
 				},
 			},
-			Source:   true,
 			Position: module.Left,
 		},
 		{
 			Name:          ResponsePort,
 			Label:         "Response",
-			Source:        false,
+			Source:        true,
 			Position:      module.Right,
 			Configuration: Response{},
 		},
@@ -191,7 +189,7 @@ func (h *Component) Ports() []module.Port {
 	return append(ports, module.Port{
 		Name:          ErrorPort,
 		Label:         "Error",
-		Source:        false,
+		Source:        true,
 		Position:      module.Bottom,
 		Configuration: Error{},
 	})

@@ -155,7 +155,6 @@ func (c *Component) Ports() []module.Port {
 			Name:          module.SettingsPort,
 			Label:         "Settings",
 			Configuration: Settings{},
-			Source:        true,
 		},
 		{
 			Name:  RequestPort,
@@ -169,13 +168,12 @@ func (c *Component) Ports() []module.Port {
 					TokenType: "Bearer",
 				},
 			},
-			Source:   true,
 			Position: module.Left,
 		},
 		{
 			Name:          ResponsePort,
 			Label:         "Response",
-			Source:        false,
+			Source:        true,
 			Position:      module.Right,
 			Configuration: Response{},
 		}}
@@ -188,7 +186,7 @@ func (c *Component) Ports() []module.Port {
 		Position:      module.Bottom,
 		Name:          ErrorPort,
 		Label:         "Error",
-		Source:        false,
+		Source:        true,
 		Configuration: Error{},
 	})
 }

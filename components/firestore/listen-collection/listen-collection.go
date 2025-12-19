@@ -240,10 +240,8 @@ func (g *Component) Ports() []module.Port {
 			Name:          module.SettingsPort,
 			Label:         "Settings",
 			Configuration: Settings{},
-			Source:        true,
 		},
 		{
-			Source:        true,
 			Name:          StartPort,
 			Label:         "Start",
 			Position:      module.Left,
@@ -252,10 +250,11 @@ func (g *Component) Ports() []module.Port {
 		{
 			Name:          module.ControlPort,
 			Label:         "Dashboard",
+			Source:        true,
 			Configuration: g.getControl(),
 		},
 		{
-			Source:        false,
+			Source:        true,
 			Name:          ResponsePort,
 			Label:         "Response",
 			Position:      module.Right,
@@ -269,7 +268,6 @@ func (g *Component) Ports() []module.Port {
 			Position:      module.Left,
 			Name:          StopPort,
 			Label:         "Stop",
-			Source:        true,
 			Configuration: Stop{},
 		})
 	}
@@ -282,7 +280,7 @@ func (g *Component) Ports() []module.Port {
 		Position:      module.Bottom,
 		Name:          ErrorPort,
 		Label:         "Error",
-		Source:        false,
+		Source:        true,
 		Configuration: Error{},
 	})
 }

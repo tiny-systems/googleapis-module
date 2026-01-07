@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/tiny-systems/googleapis-module/components/etc"
 	"github.com/tiny-systems/googleapis-module/components/firestore/utils"
+	"github.com/tiny-systems/module/api/v1alpha1"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
 	"google.golang.org/api/iterator"
@@ -67,9 +68,9 @@ func (g *Component) GetInfo() module.ComponentInfo {
 	}
 }
 
-func (g *Component) Handle(ctx context.Context, output module.Handler, port string, msg interface{}) error {
+func (g *Component) Handle(ctx context.Context, output module.Handler, port string, msg interface{}) any {
 
-	if port == module.SettingsPort {
+	if port == v1alpha1.SettingsPort {
 		in, ok := msg.(Settings)
 		if !ok {
 			return fmt.Errorf("invalid settings")
@@ -155,7 +156,7 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 func (g *Component) Ports() []module.Port {
 	ports := []module.Port{
 		{
-			Name:          module.SettingsPort,
+			Name:          v1alpha1.SettingsPort,
 			Label:         "Settings",
 			Configuration: Settings{},
 		},

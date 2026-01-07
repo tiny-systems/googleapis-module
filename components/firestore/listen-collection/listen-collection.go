@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/tiny-systems/googleapis-module/components/etc"
 	"github.com/tiny-systems/googleapis-module/components/firestore/utils"
+	"github.com/tiny-systems/module/api/v1alpha1"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
 	"go.opentelemetry.io/otel/trace"
@@ -82,11 +83,11 @@ func (g *Component) GetInfo() module.ComponentInfo {
 	}
 }
 
-func (g *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) error {
+func (g *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) any {
 
 	switch port {
 
-	case module.SettingsPort:
+	case v1alpha1.SettingsPort:
 		in, ok := msg.(Settings)
 		if !ok {
 			return fmt.Errorf("invalid settings")
@@ -94,7 +95,7 @@ func (g *Component) Handle(ctx context.Context, handler module.Handler, port str
 		g.settings = in
 		return nil
 
-	case module.ControlPort:
+	case v1alpha1.ControlPort:
 		if msg == nil {
 			break
 		}
@@ -124,11 +125,11 @@ func (g *Component) start(ctx context.Context, handler module.Handler) error {
 
 	g.setCancelFunc(listenCancel)
 	// reconcile so show we are listening
-	_ = handler(context.Background(), module.ReconcilePort, nil)
+	_ = handler(context.Background(), v1alpha1.ReconcilePort, nil)
 
 	defer func() {
 		g.setCancelFunc(nil)
-		_ = handler(context.Background(), module.ReconcilePort, nil)
+		_ = handler(context.Background(), v1alpha1.ReconcilePort, nil)
 	}()
 
 	app, err := firebase.NewApp(listenCtx, nil,
@@ -237,7 +238,7 @@ func (g *Component) getControl() interface{} {
 func (g *Component) Ports() []module.Port {
 	ports := []module.Port{
 		{
-			Name:          module.SettingsPort,
+			Name:          v1alpha1.SettingsPort,
 			Label:         "Settings",
 			Configuration: Settings{},
 		},
@@ -248,7 +249,7 @@ func (g *Component) Ports() []module.Port {
 			Configuration: g.startSettings,
 		},
 		{
-			Name:          module.ControlPort,
+			Name:          v1alpha1.ControlPort,
 			Label:         "Dashboard",
 			Source:        true,
 			Configuration: g.getControl(),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tiny-systems/googleapis-module/components/etc"
+	"github.com/tiny-systems/module/api/v1alpha1"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
 	"golang.org/x/oauth2"
@@ -66,8 +67,8 @@ func (h *Component) GetInfo() module.ComponentInfo {
 	}
 }
 
-func (h *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) error {
-	if port == module.SettingsPort {
+func (h *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) any {
+	if port == v1alpha1.SettingsPort {
 		in, ok := msg.(Settings)
 		if !ok {
 			return fmt.Errorf("invalid settings")
@@ -127,7 +128,7 @@ func (h *Component) stop(ctx context.Context, req Request) error {
 func (h *Component) Ports() []module.Port {
 	ports := []module.Port{
 		{
-			Name:          module.SettingsPort,
+			Name:          v1alpha1.SettingsPort,
 			Label:         "Settings",
 			Configuration: Settings{},
 		},

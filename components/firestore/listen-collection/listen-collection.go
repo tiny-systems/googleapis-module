@@ -297,5 +297,8 @@ func (g *Component) Instance() module.Component {
 var _ module.Component = (*Component)(nil)
 
 func init() {
-	registry.Register(&Component{})
+	registry.Register(&Component{
+		cancelFuncLock: &sync.Mutex{},
+		runLock:        &sync.Mutex{},
+	})
 }

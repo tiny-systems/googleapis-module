@@ -10,7 +10,7 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.19.0
-	github.com/tiny-systems/module v0.1.181
+	github.com/tiny-systems/module v0.1.182
 	go.opentelemetry.io/otel/trace v1.35.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.171.0

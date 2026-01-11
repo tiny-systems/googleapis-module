@@ -7,10 +7,12 @@ toolchain go1.24.9
 require (
 	cloud.google.com/go/firestore v1.15.0
 	firebase.google.com/go v3.13.0+incompatible
+	github.com/goccy/go-json v0.10.2
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.19.0
-	github.com/tiny-systems/module v0.1.190
+	github.com/swaggest/jsonschema-go v0.3.70
+	github.com/tiny-systems/module v0.1.200
 	go.opentelemetry.io/otel/trace v1.35.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.171.0
@@ -68,7 +70,6 @@ require (
 	github.com/go-openapi/jsonreference v0.20.4 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -147,7 +148,6 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/spyzhov/ajson v0.9.4 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/swaggest/jsonschema-go v0.3.70 // indirect
 	github.com/swaggest/refl v1.3.0 // indirect
 	github.com/tiny-systems/errorpanic v0.7.1 // indirect
 	github.com/tiny-systems/platform-api v0.0.13 // indirect

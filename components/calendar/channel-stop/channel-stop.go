@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ComponentName = "calendar_channel_stop"
+	ComponentName = "calendar_watch_stop"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"

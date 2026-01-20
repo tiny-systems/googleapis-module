@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ComponentName = "response_event"
+	ComponentName = "calendar_event_respond"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"

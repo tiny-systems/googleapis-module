@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	ComponentName = "google_api_client"
+	ComponentName = "google_api_call"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"

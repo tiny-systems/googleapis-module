@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ComponentName = "exchange_auth_code"
+	ComponentName = "oauth_code_exchange"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"

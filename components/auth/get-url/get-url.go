@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ComponentName = "get_auth_url"
+	ComponentName = "oauth_url_get"
 	RequestPort   = "request"
 	ResponsePort  = "response"
 	ErrorPort     = "error"

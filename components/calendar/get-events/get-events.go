@@ -7,8 +7,6 @@ import (
 	"github.com/tiny-systems/module/api/v1alpha1"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 	"time"
@@ -29,7 +27,7 @@ type Request struct {
 	CalendarId   string           `json:"calendarId" required:"true" default:"primary" minLength:"1" title:"Calendar ID"`
 	StartDate    time.Time        `json:"startDate" title:"Start date" description:"2012-10-01T09:45:00.000+02:00"`
 	EndDate      time.Time        `json:"endDate" title:"End date" description:"2012-10-01T09:45:00.000+02:00"`
-	Token        etc.Token        `json:"token" required:"true" title:"Auth Token"`
+	Token        *etc.Token       `json:"token,omitempty" title:"Auth Token"`
 	SyncToken    *string          `json:"syncToken,omitempty" title:"Sync Token" description:"To proceed syncing from previous position"`
 	PageToken    *string          `json:"pageToken,omitempty" title:"Page Token" description:"Token used to retrieve the page."`
 	ShowDeleted  bool             `json:"showDeleted,omitempty" title:"Show deleted events" default:"true"`
@@ -101,17 +99,10 @@ func (c *Component) Handle(ctx context.Context, handler module.Handler, port str
 
 func (c *Component) getEvents(ctx context.Context, req Request) (*calendar.Events, error) {
 
-	config, err := google.ConfigFromJSON([]byte(req.Config.Credentials), req.Config.Scopes...)
+	client, err := etc.NewGoogleHTTPClient(ctx, req.Config, req.Token)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse client secret file to config: %v", err)
+		return nil, fmt.Errorf("unable to create google client: %v", err)
 	}
-
-	client := config.Client(ctx, &oauth2.Token{
-		AccessToken:  req.Token.AccessToken,
-		RefreshToken: req.Token.RefreshToken,
-		Expiry:       req.Token.Expiry,
-		TokenType:    req.Token.TokenType,
-	})
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
@@ -165,7 +156,7 @@ func (c *Component) Ports() []module.Port {
 					Scopes: []string{"https://www.googleapis.com/auth/calendar.events.readonly"},
 				},
 				CalendarId: "SomeID",
-				Token: etc.Token{
+				Token: &etc.Token{
 					TokenType: "Bearer",
 				},
 			},

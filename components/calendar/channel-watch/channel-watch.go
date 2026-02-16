@@ -7,8 +7,6 @@ import (
 	"github.com/tiny-systems/module/api/v1alpha1"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
@@ -40,7 +38,7 @@ type Request struct {
 	Context  Context          `json:"context,omitempty" configurable:"true" title:"Context" description:"Arbitrary message to be send further"`
 	Calendar Calendar         `json:"calendar" required:"true" title:"Calendar"`
 	Channel  Channel          `json:"channel" required:"true" title:"Channel"`
-	Token    etc.Token        `json:"token" required:"true" title:"Access token"`
+	Token    *etc.Token       `json:"token,omitempty" title:"Access token"`
 	Config   etc.ClientConfig `json:"config" required:"true" title:"Client credentials"`
 }
 
@@ -130,17 +128,10 @@ func (h *Component) Handle(ctx context.Context, handler module.Handler, port str
 }
 
 func (h *Component) watch(ctx context.Context, req Request) (*calendar.Channel, error) {
-	config, err := google.ConfigFromJSON([]byte(req.Config.Credentials), req.Config.Scopes...)
+	client, err := etc.NewGoogleHTTPClient(ctx, req.Config, req.Token)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse client secret file to config: %v", err)
+		return nil, fmt.Errorf("unable to create google client: %v", err)
 	}
-
-	client := config.Client(ctx, &oauth2.Token{
-		AccessToken:  req.Token.AccessToken,
-		RefreshToken: req.Token.RefreshToken,
-		Expiry:       req.Token.Expiry,
-		TokenType:    req.Token.TokenType,
-	})
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
@@ -170,7 +161,7 @@ func (h *Component) Ports() []module.Port {
 				Channel: Channel{
 					Type: "web_hook",
 				},
-				Token: etc.Token{
+				Token: &etc.Token{
 					TokenType: "Bearer",
 				},
 			},

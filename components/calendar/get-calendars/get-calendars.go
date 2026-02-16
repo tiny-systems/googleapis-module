@@ -7,8 +7,6 @@ import (
 	"github.com/tiny-systems/module/api/v1alpha1"
 	"github.com/tiny-systems/module/module"
 	"github.com/tiny-systems/module/registry"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
@@ -33,7 +31,7 @@ type Component struct {
 type Request struct {
 	Context Context          `json:"context" title:"Context" configurable:"true"`
 	Config  etc.ClientConfig `json:"config" title:"Config"  required:"true" description:"Client Config"`
-	Token   etc.Token        `json:"token" required:"true" title:"Auth Token"`
+	Token   *etc.Token       `json:"token,omitempty" title:"Auth Token"`
 }
 
 type Response struct {
@@ -94,17 +92,10 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 
 func (c *Component) getCalendars(ctx context.Context, req Request) ([]*calendar.CalendarListEntry, error) {
 
-	config, err := google.ConfigFromJSON([]byte(req.Config.Credentials), req.Config.Scopes...)
+	client, err := etc.NewGoogleHTTPClient(ctx, req.Config, req.Token)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse client secret file to config: %v", err)
+		return nil, fmt.Errorf("unable to create google client: %v", err)
 	}
-
-	client := config.Client(ctx, &oauth2.Token{
-		AccessToken:  req.Token.AccessToken,
-		RefreshToken: req.Token.RefreshToken,
-		Expiry:       req.Token.Expiry,
-		TokenType:    req.Token.TokenType,
-	})
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {

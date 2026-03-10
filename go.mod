@@ -1,8 +1,8 @@
 module github.com/tiny-systems/googleapis-module
 
-go 1.24.2
+go 1.25.0
 
-toolchain go1.24.9
+toolchain go1.25.5
 
 require (
 	cloud.google.com/go/firestore v1.15.0
@@ -12,7 +12,7 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.19.0
 	github.com/swaggest/jsonschema-go v0.3.70
-	github.com/tiny-systems/module v0.1.346
+	github.com/tiny-systems/module v0.1.357
 	go.opentelemetry.io/otel/trace v1.39.0
 	golang.org/x/oauth2 v0.34.0
 	google.golang.org/api v0.171.0

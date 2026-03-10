@@ -1,4 +1,4 @@
-# TinySystems Google APIs Module
+# Tiny Systems Google APIs Module
 
 Google Cloud and Workspace integration components covering OAuth, Calendar, and Firestore.
 
@@ -52,10 +52,10 @@ helm install googleapis-module tinysystems/tinysystems-operator \
 go run cmd/main.go run --name=googleapis-module --namespace=tinysystems --version=1.0.0
 ```
 
-## Part of TinySystems
+## Part of Tiny Systems
 
-This module is part of the [TinySystems](https://github.com/tiny-systems) platform -- a visual flow-based automation engine running on Kubernetes.
+This module is part of the [Tiny Systems](https://github.com/tiny-systems) platform -- a visual flow-based automation engine running on Kubernetes.
 
 ## License
 
-This module's source code is MIT-licensed. It depends on the [TinySystems Module SDK](https://github.com/tiny-systems/module) (BSL 1.1). See [LICENSE](LICENSE) for details.
+This module's source code is MIT-licensed. It depends on the [Tiny Systems Module SDK](https://github.com/tiny-systems/module) (BSL 1.1). See [LICENSE](LICENSE) for details.

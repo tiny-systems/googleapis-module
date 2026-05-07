@@ -69,16 +69,18 @@ func (a *Component) exchange(ctx context.Context, in Request) (*oauth2.Token, er
 	return config.Exchange(ctx, in.AuthCode)
 }
 
-func (a *Component) Handle(ctx context.Context, output module.Handler, port string, msg interface{}) any {
-	if port == v1alpha1.SettingsPort {
-		in, ok := msg.(Settings)
-		if !ok {
-			return fmt.Errorf("invalid settings")
-		}
-		a.settings = in
-		return nil
+// OnSettings stores the component settings.
+func (a *Component) OnSettings(_ context.Context, msg any) error {
+	in, ok := msg.(Settings)
+	if !ok {
+		return fmt.Errorf("invalid settings")
 	}
+	a.settings = in
+	return nil
+}
 
+// Handle dispatches business ports. System ports go through capabilities.
+func (a *Component) Handle(ctx context.Context, output module.Handler, port string, msg any) any {
 	if port != RequestPort {
 		return fmt.Errorf("unknown port %s", port)
 	}
@@ -109,6 +111,7 @@ func (a *Component) Handle(ctx context.Context, output module.Handler, port stri
 			Expiry:       token.Expiry,
 		},
 	})
+
 
 }
 
@@ -151,7 +154,10 @@ func (a *Component) Instance() module.Component {
 	return &Component{}
 }
 
-var _ module.Component = (*Component)(nil)
+var (
+	_ module.Component       = (*Component)(nil)
+	_ module.SettingsHandler = (*Component)(nil)
+)
 
 func init() {
 	registry.Register(&Component{})

@@ -123,17 +123,19 @@ func (c *Component) GetInfo() module.ComponentInfo {
 }
 
 // Handle processes incoming messages on ports
-func (c *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) any {
-	switch port {
-	case v1alpha1.SettingsPort:
-		return c.handleSettings(ctx, msg)
+// OnSettings stores the component settings.
+func (c *Component) OnSettings(ctx context.Context, msg any) error {
 
-	case RequestPort:
-		return c.handleRequest(ctx, handler, msg)
+	return c.handleSettings(ctx, msg)
+}
 
-	default:
-		return fmt.Errorf("port %s is not supported", port)
+// Handle dispatches the RequestPort. System ports go through capabilities.
+func (c *Component) Handle(ctx context.Context, handler module.Handler, port string, msg any) any {
+	if port != RequestPort {
+		return fmt.Errorf("unknown port: %s", port)
 	}
+
+	return c.handleRequest(ctx, handler, msg)
 }
 
 // handleSettings processes settings updates
@@ -635,7 +637,10 @@ func (c *Component) Ports() []module.Port {
 	return ports
 }
 
-var _ module.Component = (*Component)(nil)
+var (
+	_ module.Component       = (*Component)(nil)
+	_ module.SettingsHandler = (*Component)(nil)
+)
 
 // getMapKeys returns keys from a map for logging
 func getMapKeys(m map[string]any) []string {

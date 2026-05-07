@@ -57,17 +57,18 @@ func (g *Component) GetInfo() module.ComponentInfo {
 	}
 }
 
-func (g *Component) Handle(ctx context.Context, output module.Handler, port string, msg interface{}) any {
-
-	if port == v1alpha1.SettingsPort {
-		in, ok := msg.(Settings)
-		if !ok {
-			return fmt.Errorf("invalid settings")
-		}
-		g.settings = in
-		return nil
+// OnSettings stores the component settings.
+func (g *Component) OnSettings(_ context.Context, msg any) error {
+	in, ok := msg.(Settings)
+	if !ok {
+		return fmt.Errorf("invalid settings")
 	}
+	g.settings = in
+	return nil
+}
 
+// Handle dispatches business ports. System ports go through capabilities.
+func (g *Component) Handle(ctx context.Context, output module.Handler, port string, msg any) any {
 	var err error
 
 	req, ok := msg.(Request)
@@ -122,6 +123,7 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 		RefID:   ref.ID,
 		RefPath: ref.Path,
 	})
+
 }
 
 func (g *Component) Ports() []module.Port {
@@ -167,7 +169,10 @@ func (g *Component) Instance() module.Component {
 	return &Component{}
 }
 
-var _ module.Component = (*Component)(nil)
+var (
+	_ module.Component       = (*Component)(nil)
+	_ module.SettingsHandler = (*Component)(nil)
+)
 
 func init() {
 	registry.Register(&Component{})

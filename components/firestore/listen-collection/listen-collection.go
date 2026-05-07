@@ -83,36 +83,38 @@ func (g *Component) GetInfo() module.ComponentInfo {
 	}
 }
 
-func (g *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) any {
-
-	switch port {
-
-	case v1alpha1.SettingsPort:
-		in, ok := msg.(Settings)
-		if !ok {
-			return fmt.Errorf("invalid settings")
-		}
-		g.settings = in
-		return nil
-
-	case v1alpha1.ControlPort:
-		if msg == nil {
-			break
-		}
-		switch msg.(type) {
-		case StopControl:
-			return g.stop()
-		}
-	case StartPort:
-		req, ok := msg.(Start)
-		if !ok {
-			return fmt.Errorf("invalid request")
-		}
-
-		g.startSettings = req
-		return g.start(ctx, handler)
+// OnSettings stores the component settings.
+func (g *Component) OnSettings(_ context.Context, msg any) error {
+	in, ok := msg.(Settings)
+	if !ok {
+		return fmt.Errorf("invalid settings")
 	}
-	return fmt.Errorf("invalid port")
+	g.settings = in
+	return nil
+}
+
+// OnControl handles the Stop button on the dashboard.
+func (g *Component) OnControl(_ context.Context, msg any) error {
+	if msg == nil {
+		return nil
+	}
+	if _, ok := msg.(StopControl); ok {
+		return g.stop()
+	}
+	return nil
+}
+
+// Handle dispatches the StartPort. System ports go through capabilities.
+func (g *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) any {
+	if port != StartPort {
+		return fmt.Errorf("invalid port")
+	}
+	req, ok := msg.(Start)
+	if !ok {
+		return fmt.Errorf("invalid request")
+	}
+	g.startSettings = req
+	return g.start(ctx, handler)
 }
 
 func (g *Component) start(ctx context.Context, handler module.Handler) error {
@@ -294,7 +296,11 @@ func (g *Component) Instance() module.Component {
 	}
 }
 
-var _ module.Component = (*Component)(nil)
+var (
+	_ module.Component       = (*Component)(nil)
+	_ module.SettingsHandler = (*Component)(nil)
+	_ module.ControlHandler  = (*Component)(nil)
+)
 
 func init() {
 	registry.Register(&Component{

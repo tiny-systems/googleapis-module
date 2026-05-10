@@ -73,19 +73,19 @@ func (c *Component) OnSettings(_ context.Context, msg any) error {
 }
 
 // Handle dispatches business ports. System ports go through capabilities.
-func (c *Component) Handle(ctx context.Context, handler module.Handler, port string, msg any) any {
+func (c *Component) Handle(ctx context.Context, handler module.Handler, port string, msg any) module.Result {
 	if port != RequestPort {
-		return fmt.Errorf("unknown port %s", port)
+		return module.Fail(fmt.Errorf("unknown port %s", port))
 	}
 
 	req, ok := msg.(Request)
 	if !ok {
-		return fmt.Errorf("invalid message")
+		return module.Fail(fmt.Errorf("invalid message"))
 	}
 	events, err := c.getEvents(ctx, req)
 	if err != nil {
 		if !c.settings.EnableErrorPort {
-			return err
+			return module.Fail(err)
 		}
 		return handler(ctx, ErrorPort, Error{
 			Context: req.Context,

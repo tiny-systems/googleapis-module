@@ -66,21 +66,21 @@ func (a *Component) OnSettings(_ context.Context, msg any) error {
 }
 
 // Handle dispatches business ports. System ports go through capabilities.
-func (a *Component) Handle(ctx context.Context, output module.Handler, port string, msg any) any {
+func (a *Component) Handle(ctx context.Context, output module.Handler, port string, msg any) module.Result {
 	if port != RequestPort {
-		return fmt.Errorf("unknown port %s", port)
+		return module.Fail(fmt.Errorf("unknown port %s", port))
 	}
 	//
 	in, ok := msg.(Request)
 	if !ok {
-		return fmt.Errorf("invalid input message")
+		return module.Fail(fmt.Errorf("invalid input message"))
 	}
 	url, err := getAuthUrl(ctx, in)
 
 	if err != nil {
 		// check err port
 		if !a.settings.EnableErrorPort {
-			return err
+			return module.Fail(err)
 		}
 		return output(ctx, ErrorPort, Error{
 			Context: in.Context,

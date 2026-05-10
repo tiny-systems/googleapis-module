@@ -64,19 +64,19 @@ func (g *Component) OnSettings(_ context.Context, msg any) error {
 }
 
 // Handle dispatches business ports. System ports go through capabilities.
-func (g *Component) Handle(ctx context.Context, output module.Handler, port string, msg any) any {
+func (g *Component) Handle(ctx context.Context, output module.Handler, port string, msg any) module.Result {
 	var err error
 
 	req, ok := msg.(Request)
 	if !ok {
-		return fmt.Errorf("invalid request")
+		return module.Fail(fmt.Errorf("invalid request"))
 	}
 
 	app, err := firebase.NewApp(ctx, nil, option.WithCredentialsJSON([]byte(req.Config.Credentials)), option.WithScopes(req.Config.Scopes...))
 	if err != nil {
 		// check err port
 		if !g.settings.EnableErrorPort {
-			return err
+			return module.Fail(err)
 		}
 		return output(ctx, ErrorPort, Error{
 			Context: req.Context,
@@ -89,7 +89,7 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 	if err != nil {
 		// check err port
 		if !g.settings.EnableErrorPort {
-			return err
+			return module.Fail(err)
 		}
 		return output(ctx, ErrorPort, Error{
 			Error: err.Error(),
@@ -102,7 +102,7 @@ func (g *Component) Handle(ctx context.Context, output module.Handler, port stri
 	if err != nil {
 		// check err port
 		if !g.settings.EnableErrorPort {
-			return err
+			return module.Fail(err)
 		}
 		return output(ctx, ErrorPort, Error{
 			Error: err.Error(),

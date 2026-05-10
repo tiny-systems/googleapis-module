@@ -130,9 +130,9 @@ func (c *Component) OnSettings(ctx context.Context, msg any) error {
 }
 
 // Handle dispatches the RequestPort. System ports go through capabilities.
-func (c *Component) Handle(ctx context.Context, handler module.Handler, port string, msg any) any {
+func (c *Component) Handle(ctx context.Context, handler module.Handler, port string, msg any) module.Result {
 	if port != RequestPort {
-		return fmt.Errorf("unknown port: %s", port)
+		return module.Fail(fmt.Errorf("unknown port: %s", port))
 	}
 
 	return c.handleRequest(ctx, handler, msg)
@@ -228,10 +228,10 @@ func (c *Component) handleSettings(ctx context.Context, msg interface{}) error {
 }
 
 // handleRequest executes the API request
-func (c *Component) handleRequest(ctx context.Context, handler module.Handler, msg interface{}) any {
+func (c *Component) handleRequest(ctx context.Context, handler module.Handler, msg interface{}) module.Result {
 	in, ok := msg.(Request)
 	if !ok {
-		return fmt.Errorf("invalid request message")
+		return module.Fail(fmt.Errorf("invalid request message"))
 	}
 
 	c.settingsLock.RLock()
@@ -248,7 +248,7 @@ func (c *Component) handleRequest(ctx context.Context, handler module.Handler, m
 				Error:   err.Error(),
 			})
 		}
-		return err
+		return module.Fail(err)
 	}
 
 	// Execute the request
@@ -260,7 +260,7 @@ func (c *Component) handleRequest(ctx context.Context, handler module.Handler, m
 				Error:   err.Error(),
 			})
 		}
-		return err
+		return module.Fail(err)
 	}
 
 	response.Context = in.Context

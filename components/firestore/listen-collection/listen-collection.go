@@ -105,16 +105,16 @@ func (g *Component) OnControl(_ context.Context, msg any) error {
 }
 
 // Handle dispatches the StartPort. System ports go through capabilities.
-func (g *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) any {
+func (g *Component) Handle(ctx context.Context, handler module.Handler, port string, msg interface{}) module.Result {
 	if port != StartPort {
-		return fmt.Errorf("invalid port")
+		return module.Fail(fmt.Errorf("invalid port"))
 	}
 	req, ok := msg.(Start)
 	if !ok {
-		return fmt.Errorf("invalid request")
+		return module.Fail(fmt.Errorf("invalid request"))
 	}
 	g.startSettings = req
-	return g.start(ctx, handler)
+	return module.Fail(g.start(ctx, handler))
 }
 
 func (g *Component) start(ctx context.Context, handler module.Handler) error {
